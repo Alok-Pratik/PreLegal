@@ -96,7 +96,7 @@ Backend available at http://localhost:8000
 - Added a shared `apiClient.ts` (`getJson`/`postJson` with credentialed fetch and consistent error extraction from FastAPI's error shapes) that `chatApi.ts` and the new `documentsApi.ts` both build on
 - Added the disclaimer required by this ticket ("This document is a draft generated with AI assistance...") to `DocumentPreview.tsx` and `DocumentPdf.tsx`
 - Merged via [PR #7](https://github.com/Alok-Pratik/PreLegal/pull/7)
-- UI polish pass (rest of this ticket's scope): shared `ErrorMessage`/`Spinner` components replace ad-hoc red text and "Loading..." strings across `LoginScreen`, `ChatInterface`, `DocumentsList`, `DownloadButton`, and `page.tsx`; a persistent disclaimer footer was added to the logged-in app shell so the legal-review notice isn't only visible on the document preview/PDF; `DocumentsList`'s empty state got an icon; a stray JSX indentation bug in `LoginScreen`'s confirm-password field was fixed
+- UI polish pass (rest of this ticket's scope): shared `ErrorMessage`/`Spinner` components replace ad-hoc red text and "Loading..." strings across `LoginScreen`, `ChatInterface`, `DocumentsList`, `DownloadButton`, and `page.tsx`; a persistent disclaimer footer was added to the logged-in app shell so the legal-review notice isn't only visible on the document preview/PDF; `DocumentsList`'s empty state got an icon; a stray JSX indentation bug in `LoginScreen`'s confirm-password field was fixed; merged via [PR #8](https://github.com/Alok-Pratik/PreLegal/pull/8)
 
 ### Current API Endpoints
 - `POST /api/auth/signup` - Create an account (email + password), sets session cookie
