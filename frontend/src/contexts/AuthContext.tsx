@@ -10,9 +10,8 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signin: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string) => Promise<void>;
-  signout: () => Promise<void>;
+  login: (email: string) => Promise<void>;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -42,12 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  const signin = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/signin', {
+  // Fake login: no password is required yet (see SCRUM-5). Entering an
+  // email is enough to enter the platform. Replace with real
+  // authentication in a later ticket.
+  const login = async (email: string) => {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email }),
     });
 
     if (!res.ok) {
@@ -59,25 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
-  const signup = async (email: string, password: string) => {
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.detail || 'Sign up failed');
-    }
-
-    const data = await res.json();
-    setUser(data.user);
-  };
-
-  const signout = async () => {
-    await fetch('/api/auth/signout', {
+  const logout = async () => {
+    await fetch('/api/auth/logout', {
       method: 'POST',
       credentials: 'include',
     });
@@ -85,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signin, signup, signout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

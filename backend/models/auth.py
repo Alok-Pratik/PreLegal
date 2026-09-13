@@ -3,18 +3,12 @@
 from pydantic import BaseModel, EmailStr
 
 
-class SignupRequest(BaseModel):
-    """Signup request body."""
+class LoginRequest(BaseModel):
+    """Fake login request body. No password: this is a placeholder auth
+    flow for the V1 foundation and gets replaced by real authentication
+    in a later ticket."""
 
     email: EmailStr
-    password: str
-
-
-class SigninRequest(BaseModel):
-    """Signin request body."""
-
-    email: EmailStr
-    password: str
 
 
 class UserResponse(BaseModel):

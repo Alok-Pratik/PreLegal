@@ -5,13 +5,12 @@ import { useAuth, User } from '@/contexts/AuthContext';
 
 interface UserMenuProps {
   user: User;
-  onOpenDocuments: () => void;
 }
 
-export function UserMenu({ user, onOpenDocuments }: UserMenuProps) {
+export function UserMenu({ user }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { signout } = useAuth();
+  const { logout } = useAuth();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -24,8 +23,8 @@ export function UserMenu({ user, onOpenDocuments }: UserMenuProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSignout = async () => {
-    await signout();
+  const handleLogout = async () => {
+    await logout();
     setIsOpen(false);
   };
 
@@ -35,7 +34,7 @@ export function UserMenu({ user, onOpenDocuments }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
       >
-        <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+        <div className="w-8 h-8 bg-[#753991] rounded-full flex items-center justify-center text-white font-medium text-sm">
           {user.email[0].toUpperCase()}
         </div>
         <span className="text-sm text-slate-700 hidden sm:inline max-w-32 truncate">
@@ -57,19 +56,7 @@ export function UserMenu({ user, onOpenDocuments }: UserMenuProps) {
             <p className="text-sm font-medium text-slate-900 truncate">{user.email}</p>
           </div>
           <button
-            onClick={() => {
-              onOpenDocuments();
-              setIsOpen(false);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            My Documents
-          </button>
-          <button
-            onClick={handleSignout}
+            onClick={handleLogout}
             className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

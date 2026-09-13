@@ -1,63 +1,34 @@
-"""Authentication business logic."""
+"""Fake authentication business logic for the V1 foundation.
+
+There is no password check here by design (see SCRUM-5): entering an
+email is enough to enter the platform. This is a placeholder to be
+replaced by real authentication in a later ticket.
+"""
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
 
 from database import User
-from core.security import verify_password, get_password_hash, create_access_token
 
 
 class AuthService:
-    """Handles authentication business logic."""
+    """Handles the fake authentication business logic."""
 
     def __init__(self, db: Session):
         self.db = db
 
-    def signup(self, email: str, password: str) -> tuple[User, str]:
-        """
-        Register a new user.
-        Returns: (user, token)
-        Raises: HTTPException if email already exists or password too short
-        """
-        if len(password) < 8:
-            raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
-
-        hashed_password = get_password_hash(password)
-        user = User(email=email, hashed_password=hashed_password)
-
-        try:
-            self.db.add(user)
-            self.db.commit()
-            self.db.refresh(user)
-        except IntegrityError:
-            self.db.rollback()
-            raise HTTPException(status_code=400, detail="Email already registered")
-
-        token = create_access_token(user.id, user.email)
-        return user, token
-
-    def signin(self, email: str, password: str) -> tuple[User, str]:
-        """
-        Authenticate a user.
-        Returns: (user, token)
-        Raises: HTTPException if credentials invalid
-        """
+    def login(self, email: str) -> User:
+        """Get or create a user by email and log them in. No password
+        is checked or stored."""
         user = self.db.query(User).filter(User.email == email).first()
-
-        # Constant-time verification to prevent timing attacks
         if user:
-            password_valid = verify_password(password, user.hashed_password)
-        else:
-            # Perform dummy verification to maintain constant timing
-            verify_password(password, "$2b$12$REuOu6.NifRKAB0krbBuzuEJaX7f.oZS5I9C/RZQLWESR.jIgpZ3C")
-            password_valid = False
+            return user
 
-        if not password_valid:
-            raise HTTPException(status_code=401, detail="Invalid email or password")
-
-        token = create_access_token(user.id, user.email)
-        return user, token
+        user = User(email=email)
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
 
     def get_user_by_id(self, user_id: int) -> User:
         """

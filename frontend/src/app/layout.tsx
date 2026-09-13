@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Legal Document Creator | Prelegal",
-  description: "Create professional legal documents in minutes with AI assistance. Based on Common Paper standard terms.",
+  title: "Prelegal",
+  description: "Draft professional legal agreements based on Common Paper standard terms.",
 };
 
 export default function RootLayout({

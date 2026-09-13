@@ -1,1 +1,1 @@
-"""Core utilities and security functions."""
+"""Core utilities and dependencies."""

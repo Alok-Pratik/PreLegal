@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-The current implementation supports all 11 document types via AI chat with full user authentication and document persistence.
+SCRUM-5 reset the app to a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. The AI chat, document types, and real user authentication built in PL-5 through PL-7 (described below for history) were removed from this foundation and will be rebuilt on top of it in later tickets.
 
 ## Development process
 
@@ -56,6 +56,15 @@ Backend available at http://localhost:8000
 
 ## Implementation Status
 
+### Completed (SCRUM-5) — current state
+- Rebuilt the V1 foundation: Docker multi-stage build, FastAPI + SQLite backend (fresh DB each container start), Next.js static export served by FastAPI at localhost:8000, start/stop scripts for Mac/Linux/Windows
+- Fake login screen: enter an email, no password, to enter the platform (no real authentication yet)
+- `users` table tracks only email identity for the fake session
+- Placeholder home page after login; no document types, AI chat, or document persistence yet
+- The AI chat, document catalog, and real JWT/bcrypt authentication from PL-5–PL-7 below were removed from the codebase for this reset and are expected back in future tickets
+
+### History (superseded by SCRUM-5, kept for reference)
+
 ### Completed (PL-4)
 - Docker multi-stage build (Node frontend + Python backend)
 - FastAPI backend with SQLite (fresh DB each container start)
@@ -91,15 +100,9 @@ Backend available at http://localhost:8000
 - Protected document save/load endpoints
 
 ### Current API Endpoints
-- `POST /api/auth/signup` - Create new user account
-- `POST /api/auth/signin` - Sign in and receive JWT cookie
-- `POST /api/auth/signout` - Clear auth cookie
+- `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie
+- `POST /api/auth/logout` - Clear session cookie
 - `GET /api/auth/me` - Get current user info
-- `GET /api/documents` - List user's saved documents (auth required)
-- `POST /api/documents` - Save new document (auth required)
-- `GET /api/documents/{id}` - Get specific document (auth required)
-- `PUT /api/documents/{id}` - Update document (auth required)
-- `DELETE /api/documents/{id}` - Delete document (auth required)
-- `GET /api/chat/greeting` - Get AI greeting
-- `POST /api/chat/message` - Send chat message and get AI response
 - `GET /api/health` - Health check
+
+The chat and document endpoints listed below (from PL-5–PL-7) no longer exist on this branch; they'll return once those features are rebuilt on the new foundation.

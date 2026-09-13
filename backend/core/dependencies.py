@@ -1,4 +1,10 @@
-"""FastAPI dependencies for authentication."""
+"""FastAPI dependencies for the fake V1 authentication flow.
+
+The session cookie is just a user id with no signature or expiry. This
+is intentional for now (see SCRUM-5): there is no real authentication
+yet, only enough session tracking to keep a user "logged in" across
+requests. Replace with signed/JWT sessions when real auth is built.
+"""
 
 from typing import Optional
 
@@ -6,53 +12,38 @@ from fastapi import Cookie, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db, User
-from core.security import decode_access_token
 from services.auth_service import AuthService
+
+SESSION_COOKIE_NAME = "session_user_id"
 
 
 async def get_current_user(
-    access_token: Optional[str] = Cookie(None),
+    session_user_id: Optional[str] = Cookie(None, alias=SESSION_COOKIE_NAME),
     db: Session = Depends(get_db),
 ) -> User:
     """
-    Dependency to get the current authenticated user from cookie.
+    Dependency to get the current "logged in" user from the session cookie.
     Raises 401 if not authenticated.
     """
-    if not access_token:
+    if not session_user_id or not session_user_id.isdigit():
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    payload = decode_access_token(access_token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid authentication token")
-
-    user_id = payload.get("sub")
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid token payload")
-
     auth_service = AuthService(db)
-    return auth_service.get_user_by_id(int(user_id))
+    return auth_service.get_user_by_id(int(session_user_id))
 
 
 async def get_current_user_optional(
-    access_token: Optional[str] = Cookie(None),
+    session_user_id: Optional[str] = Cookie(None, alias=SESSION_COOKIE_NAME),
     db: Session = Depends(get_db),
 ) -> Optional[User]:
     """
-    Optional authentication - returns None if not authenticated.
+    Optional version of get_current_user - returns None if not authenticated.
     """
-    if not access_token:
-        return None
-
-    payload = decode_access_token(access_token)
-    if not payload:
-        return None
-
-    user_id = payload.get("sub")
-    if not user_id:
+    if not session_user_id or not session_user_id.isdigit():
         return None
 
     try:
         auth_service = AuthService(db)
-        return auth_service.get_user_by_id(int(user_id))
+        return auth_service.get_user_by_id(int(session_user_id))
     except HTTPException:
         return None

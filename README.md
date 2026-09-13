@@ -74,9 +74,9 @@ prelegal/
 ## API Endpoints
 
 - `GET /api/health` - Health check
-- `POST /api/auth/signup` - Signup (placeholder)
-- `POST /api/auth/signin` - Signin (placeholder)
-- `GET /api/auth/me` - Current user (placeholder)
+- `POST /api/auth/login` - Fake login by email (no password yet)
+- `POST /api/auth/logout` - Sign out
+- `GET /api/auth/me` - Current user
 
 ## License
 
