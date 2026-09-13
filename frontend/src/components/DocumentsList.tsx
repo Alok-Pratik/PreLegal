@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { fetchDocuments } from '@/services/documentsApi';
 import { DocumentSummary } from '@/types/documents';
+import { ErrorMessage } from './ErrorMessage';
+import { Spinner } from './Spinner';
 
 interface DocumentsListProps {
   onSelectDocument: (id: number) => void;
@@ -24,20 +26,30 @@ export function DocumentsList({ onSelectDocument, onCreateNew }: DocumentsListPr
   }, []);
 
   if (error) {
-    return (
-      <p className="text-sm text-red-600" role="alert">
-        {error}
-      </p>
-    );
+    return <ErrorMessage message={error} />;
   }
 
   if (documents === null) {
-    return <p className="text-slate-400 italic">Loading your documents...</p>;
+    return <Spinner label="Loading your documents..." />;
   }
 
   if (documents.length === 0) {
     return (
       <div className="text-center py-16">
+        <svg
+          className="w-12 h-12 mx-auto mb-4 text-slate-300"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
         <p className="text-slate-500 mb-4">You haven&apos;t created any documents yet.</p>
         <button
           type="button"
