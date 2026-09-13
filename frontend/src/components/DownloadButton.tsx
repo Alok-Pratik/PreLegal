@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
 import { DocumentPdf } from './DocumentPdf';
+import { ErrorMessage } from './ErrorMessage';
 import { DocumentField } from '@/types/chat';
 
 interface DownloadButtonProps {
@@ -56,11 +57,7 @@ export function DownloadButton({ documentType, fields }: DownloadButtonProps) {
       >
         {isGenerating ? 'Generating PDF...' : 'Download PDF'}
       </button>
-      {error && (
-        <p className="text-sm text-red-600" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} />}
     </div>
   );
 }

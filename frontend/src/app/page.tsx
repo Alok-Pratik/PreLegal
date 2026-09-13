@@ -8,6 +8,8 @@ import { ChatInterface, DocumentState } from '@/components/ChatInterface';
 import { DocumentPreview } from '@/components/DocumentPreview';
 import { DownloadButton } from '@/components/DownloadButton';
 import { DocumentsList } from '@/components/DocumentsList';
+import { ErrorMessage } from '@/components/ErrorMessage';
+import { Spinner } from '@/components/Spinner';
 import { fetchDocument } from '@/services/documentsApi';
 import { DocumentDetail } from '@/types/documents';
 
@@ -24,7 +26,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-purple"></div>
+        <Spinner />
       </div>
     );
   }
@@ -87,15 +89,11 @@ export default function Home() {
         };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col">
       <AppHeader user={user} view={view} onNavigate={navigate} {...headerProps} />
 
-      <main className="max-w-[1800px] mx-auto p-6">
-        {loadError && (
-          <p className="text-sm text-red-600 mb-4" role="alert">
-            {loadError}
-          </p>
-        )}
+      <main className="max-w-[1800px] mx-auto p-6 flex-1 w-full">
+        {loadError && <ErrorMessage message={loadError} className="mb-4" />}
 
         {view === 'documents' ? (
           <DocumentsList onSelectDocument={openDocument} onCreateNew={startNewDocument} />
@@ -134,6 +132,10 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      <footer className="border-t border-slate-200 py-3 px-6 text-center text-xs text-brand-gray">
+        AI-drafted documents are not legal advice and should be reviewed by a qualified attorney before use.
+      </footer>
     </div>
   );
 }

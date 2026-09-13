@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, FormEvent } from 'react';
 import { ChatMessage, DocumentField } from '@/types/chat';
 import { DocumentDetail } from '@/types/documents';
 import { fetchGreeting, sendChatMessage } from '@/services/chatApi';
+import { ErrorMessage } from './ErrorMessage';
+import { Spinner } from './Spinner';
 
 export interface DocumentState {
   documentType: string;
@@ -25,6 +27,7 @@ export function ChatInterface({ onDocumentStateUpdated, initialDocument }: ChatI
   const [documentId, setDocumentId] = useState<number | null>(initialDocument?.id ?? null);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isLoadingGreeting, setIsLoadingGreeting] = useState(!initialDocument);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -52,9 +55,8 @@ export function ChatInterface({ onDocumentStateUpdated, initialDocument }: ChatI
           documentId: null,
         });
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : 'Could not start the conversation.')
-      );
+      .catch((err) => setError(err instanceof Error ? err.message : 'Could not start the conversation.'))
+      .finally(() => setIsLoadingGreeting(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -102,6 +104,14 @@ export function ChatInterface({ onDocumentStateUpdated, initialDocument }: ChatI
     }
   };
 
+  if (isLoadingGreeting) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center">
+        <Spinner label="Starting conversation..." />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-3 pb-4">
@@ -124,11 +134,7 @@ export function ChatInterface({ onDocumentStateUpdated, initialDocument }: ChatI
         <div ref={messagesEndRef} />
       </div>
 
-      {error && (
-        <p className="text-sm text-red-600 mb-2" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <ErrorMessage message={error} className="mb-2" />}
 
       <form onSubmit={handleSubmit} className="flex gap-2 border-t border-slate-200 pt-4">
         <input

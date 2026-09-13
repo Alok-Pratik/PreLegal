@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { ErrorMessage } from './ErrorMessage';
 
 type Mode = 'signin' | 'signup';
 
@@ -96,7 +97,7 @@ export function LoginScreen() {
                 type="password"
                 required
                 minLength={8}
-              maxLength={72}
+                maxLength={72}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter your password"
@@ -105,11 +106,7 @@ export function LoginScreen() {
             </div>
           )}
 
-          {error && (
-            <p className="text-sm text-red-600" role="alert">
-              {error}
-            </p>
-          )}
+          {error && <ErrorMessage message={error} />}
 
           <button
             type="submit"
