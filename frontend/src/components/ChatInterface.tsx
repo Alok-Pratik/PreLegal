@@ -1,17 +1,23 @@
 'use client';
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { ChatMessage } from '@/types/chat';
-import { MutualNdaFields, defaultFields } from '@/types/nda';
+import { ChatMessage, DocumentField } from '@/types/chat';
 import { fetchGreeting, sendChatMessage } from '@/services/chatApi';
 
-interface ChatInterfaceProps {
-  onFieldsUpdated: (fields: MutualNdaFields) => void;
+export interface DocumentState {
+  documentType: string;
+  fields: DocumentField[];
+  isComplete: boolean;
 }
 
-export function ChatInterface({ onFieldsUpdated }: ChatInterfaceProps) {
+interface ChatInterfaceProps {
+  onDocumentStateUpdated: (state: DocumentState) => void;
+}
+
+export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [fields, setFields] = useState<MutualNdaFields>(defaultFields);
+  const [documentType, setDocumentType] = useState('');
+  const [fields, setFields] = useState<DocumentField[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +28,13 @@ export function ChatInterface({ onFieldsUpdated }: ChatInterfaceProps) {
     fetchGreeting()
       .then((result) => {
         setMessages([{ role: 'assistant', content: result.reply }]);
+        setDocumentType(result.document_type);
         setFields(result.fields);
-        onFieldsUpdated(result.fields);
+        onDocumentStateUpdated({
+          documentType: result.document_type,
+          fields: result.fields,
+          isComplete: result.is_complete,
+        });
       })
       .catch((err) =>
         setError(err instanceof Error ? err.message : 'Could not start the conversation.')
@@ -34,6 +45,16 @@ export function ChatInterface({ onFieldsUpdated }: ChatInterfaceProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Refocus the input once it's re-enabled after a send completes. Calling
+  // focus() synchronously in the same tick as setIsSending(false) doesn't
+  // work: the input is still `disabled` in the DOM until React re-renders,
+  // and browsers refuse to focus a disabled element.
+  useEffect(() => {
+    if (!isSending) {
+      inputRef.current?.focus();
+    }
+  }, [isSending]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -47,15 +68,19 @@ export function ChatInterface({ onFieldsUpdated }: ChatInterfaceProps) {
     setError(null);
 
     try {
-      const result = await sendChatMessage(trimmed, messages, fields);
+      const result = await sendChatMessage(trimmed, messages, documentType, fields);
       setMessages([...nextHistory, { role: 'assistant', content: result.reply }]);
+      setDocumentType(result.document_type);
       setFields(result.fields);
-      onFieldsUpdated(result.fields);
+      onDocumentStateUpdated({
+        documentType: result.document_type,
+        fields: result.fields,
+        isComplete: result.is_complete,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong sending that message.');
     } finally {
       setIsSending(false);
-      inputRef.current?.focus();
     }
   };
 

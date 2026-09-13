@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ChatInterface } from '@/components/ChatInterface';
-import { defaultFields } from '@/types/nda';
 import * as chatApi from '@/services/chatApi';
 
 jest.mock('@/services/chatApi');
@@ -11,42 +10,66 @@ const mockedChatApi = chatApi as jest.Mocked<typeof chatApi>;
 describe('ChatInterface', () => {
   beforeEach(() => {
     mockedChatApi.fetchGreeting.mockResolvedValue({
-      reply: 'Hi! Who are the two parties?',
-      fields: defaultFields,
+      reply: 'Hi! What kind of document do you need?',
+      document_type: '',
+      fields: [],
+      is_complete: false,
     });
   });
 
   it('shows the greeting on load', async () => {
-    render(<ChatInterface onFieldsUpdated={jest.fn()} />);
+    render(<ChatInterface onDocumentStateUpdated={jest.fn()} />);
 
-    await waitFor(() => screen.getByText('Hi! Who are the two parties?'));
+    await waitFor(() => screen.getByText('Hi! What kind of document do you need?'));
   });
 
-  it('sends a message and displays the reply, updating fields', async () => {
-    const onFieldsUpdated = jest.fn();
+  it('sends a message and displays the reply, updating document state', async () => {
+    const onDocumentStateUpdated = jest.fn();
     mockedChatApi.sendChatMessage.mockResolvedValue({
-      reply: 'Got it, what is the effective date?',
-      fields: { ...defaultFields, party1: { ...defaultFields.party1, name: 'Alice' } },
+      reply: 'Got it, who is the other party?',
+      document_type: 'Mutual Non-Disclosure Agreement',
+      fields: [{ key: 'party1_name', label: 'Name', value: 'Alice', group: 'Party 1' }],
+      is_complete: false,
     });
 
-    render(<ChatInterface onFieldsUpdated={onFieldsUpdated} />);
-    await waitFor(() => screen.getByText('Hi! Who are the two parties?'));
+    render(<ChatInterface onDocumentStateUpdated={onDocumentStateUpdated} />);
+    await waitFor(() => screen.getByText('Hi! What kind of document do you need?'));
 
     const input = screen.getByPlaceholderText('Type your message...');
-    await userEvent.type(input, "I'm Alice");
+    await userEvent.type(input, "I'm Alice, I need an NDA");
     await userEvent.click(screen.getByRole('button', { name: /send/i }));
 
-    await waitFor(() => screen.getByText('Got it, what is the effective date?'));
-    expect(screen.getByText("I'm Alice")).toBeInTheDocument();
-    expect(onFieldsUpdated).toHaveBeenLastCalledWith(
-      expect.objectContaining({ party1: expect.objectContaining({ name: 'Alice' }) })
-    );
+    await waitFor(() => screen.getByText('Got it, who is the other party?'));
+    expect(screen.getByText("I'm Alice, I need an NDA")).toBeInTheDocument();
+    expect(onDocumentStateUpdated).toHaveBeenLastCalledWith({
+      documentType: 'Mutual Non-Disclosure Agreement',
+      fields: [{ key: 'party1_name', label: 'Name', value: 'Alice', group: 'Party 1' }],
+      isComplete: false,
+    });
+  });
+
+  it('returns focus to the input after a reply arrives', async () => {
+    mockedChatApi.sendChatMessage.mockResolvedValue({
+      reply: 'Got it.',
+      document_type: '',
+      fields: [],
+      is_complete: false,
+    });
+
+    render(<ChatInterface onDocumentStateUpdated={jest.fn()} />);
+    const input = await screen.findByPlaceholderText('Type your message...');
+
+    await userEvent.type(input, 'hello');
+    await userEvent.click(screen.getByRole('button', { name: /send/i }));
+
+    await waitFor(() => screen.getByText('Got it.'));
+    await waitFor(() => expect(input).toHaveFocus());
   });
 
   it('shows an error message if the conversation fails to start', async () => {
     mockedChatApi.fetchGreeting.mockRejectedValue(new Error('network error'));
 
-    render(<ChatInterface onFieldsUpdated={jest.fn()} />);
+    render(<ChatInterface onDocumentStateUpdated={jest.fn()} />);
 
     await waitFor(() => screen.getByRole('alert'));
   });

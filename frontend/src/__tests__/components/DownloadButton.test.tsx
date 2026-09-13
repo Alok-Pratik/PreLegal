@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DownloadButton } from '@/components/DownloadButton';
-import { defaultFields } from '@/types/nda';
+import { DocumentField } from '@/types/chat';
 
 jest.mock('@react-pdf/renderer', () => ({
   pdf: jest.fn(() => ({ toBlob: jest.fn().mockResolvedValue(new Blob(['pdf'])) })),
@@ -12,9 +12,13 @@ jest.mock('@react-pdf/renderer', () => ({
   StyleSheet: { create: (styles: unknown) => styles },
 }));
 
+const fields: DocumentField[] = [
+  { key: 'purpose', label: 'Purpose', value: 'Evaluating a partnership', group: '' },
+];
+
 describe('DownloadButton', () => {
-  it('generates and downloads a PDF when clicked', async () => {
-    render(<DownloadButton fields={defaultFields} />);
+  it('generates and downloads a PDF named after the document type', async () => {
+    render(<DownloadButton documentType="Cloud Service Agreement" fields={fields} />);
 
     await userEvent.click(screen.getByRole('button', { name: /download pdf/i }));
 

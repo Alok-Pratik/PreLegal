@@ -1,5 +1,3 @@
-import { MutualNdaFields } from './nda';
-
 export type Role = 'user' | 'assistant';
 
 export interface ChatMessage {
@@ -7,7 +5,16 @@ export interface ChatMessage {
   content: string;
 }
 
+export interface DocumentField {
+  key: string;
+  label: string;
+  value: string;
+  group: string;
+}
+
 export interface ChatTurnResult {
   reply: string;
-  fields: MutualNdaFields;
+  document_type: string;
+  fields: DocumentField[];
+  is_complete: boolean;
 }

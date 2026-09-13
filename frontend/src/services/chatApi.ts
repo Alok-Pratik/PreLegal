@@ -1,5 +1,4 @@
-import { ChatMessage, ChatTurnResult } from '@/types/chat';
-import { MutualNdaFields } from '@/types/nda';
+import { ChatMessage, ChatTurnResult, DocumentField } from '@/types/chat';
 
 async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
   try {
@@ -21,13 +20,14 @@ export async function fetchGreeting(): Promise<ChatTurnResult> {
 export async function sendChatMessage(
   message: string,
   history: ChatMessage[],
-  fields: MutualNdaFields
+  documentType: string,
+  fields: DocumentField[]
 ): Promise<ChatTurnResult> {
   const res = await fetch('/api/chat/message', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ message, history, fields }),
+    body: JSON.stringify({ message, history, document_type: documentType, fields }),
   });
 
   if (!res.ok) {

@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginScreen } from '@/components/LoginScreen';
 import { UserMenu } from '@/components/UserMenu';
-import { ChatInterface } from '@/components/ChatInterface';
-import { NDAPreview } from '@/components/NDAPreview';
+import { ChatInterface, DocumentState } from '@/components/ChatInterface';
+import { DocumentPreview } from '@/components/DocumentPreview';
 import { DownloadButton } from '@/components/DownloadButton';
-import { MutualNdaFields, defaultFields, isNdaComplete } from '@/types/nda';
+
+const EMPTY_STATE: DocumentState = { documentType: '', fields: [], isComplete: false };
 
 export default function Home() {
   const { user, loading } = useAuth();
-  const [fields, setFields] = useState<MutualNdaFields>(defaultFields);
+  const [documentState, setDocumentState] = useState<DocumentState>(EMPTY_STATE);
+  const { documentType, fields, isComplete } = documentState;
 
   if (loading) {
     return (
@@ -25,18 +27,18 @@ export default function Home() {
     return <LoginScreen />;
   }
 
-  const isComplete = isNdaComplete(fields);
+  const pageTitle = documentType ? `${documentType} Creator` : 'Legal Document Creator';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-[1800px] mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-[#032147]">Mutual NDA Creator</h1>
-            <p className="text-sm text-[#888888]">Create a Mutual NDA with AI assistance</p>
+            <h1 className="text-xl font-bold text-[#032147]">{pageTitle}</h1>
+            <p className="text-sm text-[#888888]">Create a legal document with AI assistance</p>
           </div>
           <div className="flex items-center gap-3">
-            {isComplete && <DownloadButton fields={fields} />}
+            {isComplete && <DownloadButton documentType={documentType} fields={fields} />}
             <UserMenu user={user} />
           </div>
         </div>
@@ -47,10 +49,10 @@ export default function Home() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
               <h2 className="text-lg font-semibold text-slate-800">AI Assistant</h2>
-              <p className="text-sm text-[#888888]">Tell me about the NDA you need</p>
+              <p className="text-sm text-[#888888]">Tell me what document you need</p>
             </div>
             <div className="p-6 h-[calc(100vh-220px)]">
-              <ChatInterface onFieldsUpdated={setFields} />
+              <ChatInterface onDocumentStateUpdated={setDocumentState} />
             </div>
           </div>
 
@@ -67,7 +69,7 @@ export default function Home() {
               )}
             </div>
             <div className="p-6 max-h-[calc(100vh-220px)] overflow-y-auto">
-              <NDAPreview fields={fields} />
+              <DocumentPreview documentType={documentType} fields={fields} />
             </div>
           </div>
         </div>

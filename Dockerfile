@@ -20,6 +20,9 @@ RUN pip install uv
 # Copy backend
 COPY backend/ ./backend/
 
+# Copy the document catalog (ai_service.py reads it relative to the repo root)
+COPY catalog.json ./catalog.json
+
 # Install Python dependencies
 WORKDIR /app/backend
 RUN uv sync

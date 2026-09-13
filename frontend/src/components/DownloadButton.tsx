@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import { pdf } from '@react-pdf/renderer';
-import { NDAPdf } from './NDAPdf';
-import { MutualNdaFields } from '@/types/nda';
+import { DocumentPdf } from './DocumentPdf';
+import { DocumentField } from '@/types/chat';
 
 interface DownloadButtonProps {
-  fields: MutualNdaFields;
+  documentType: string;
+  fields: DocumentField[];
 }
 
-export function DownloadButton({ fields }: DownloadButtonProps) {
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'document';
+}
+
+export function DownloadButton({ documentType, fields }: DownloadButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,12 +25,12 @@ export function DownloadButton({ fields }: DownloadButtonProps) {
     let url: string | null = null;
 
     try {
-      const blob = await pdf(<NDAPdf fields={fields} />).toBlob();
+      const blob = await pdf(<DocumentPdf documentType={documentType} fields={fields} />).toBlob();
       url = URL.createObjectURL(blob);
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'mutual-nda.pdf';
+      link.download = `${slugify(documentType)}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

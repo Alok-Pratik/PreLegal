@@ -1,4 +1,12 @@
-"""Pydantic models for the AI chat / Mutual NDA field extraction flow."""
+"""Pydantic models for the AI chat / document field extraction flow.
+
+Fields are modeled generically (key/label/value/group) rather than with a
+dedicated schema per document type: the 11 templates in catalog.json vary
+widely in their variable terms, and only Mutual NDA has a clean, separate
+list of cover-page fields to draw a dedicated schema from. The AI decides
+which fields a given document type needs, grouping related ones (e.g. two
+parties' details) under a shared `group` label for display.
+"""
 
 from typing import Literal
 
@@ -14,34 +22,22 @@ class ChatMessage(BaseModel):
     content: str
 
 
-class Party(BaseModel):
-    """One party's details on the NDA cover page."""
+class DocumentField(BaseModel):
+    """One field of the document being drafted."""
 
-    name: str = ""
-    title: str = ""
-    company: str = ""
-    notice_address: str = ""
-    date: str = ""
-
-
-class MutualNdaFields(BaseModel):
-    """Mutual NDA cover page fields the AI extracts from the conversation."""
-
-    purpose: str = ""
-    effective_date: str = ""
-    mnda_term: str = ""
-    confidentiality_term: str = ""
-    governing_law: str = ""
-    jurisdiction: str = ""
-    party1: Party = Field(default_factory=Party)
-    party2: Party = Field(default_factory=Party)
+    key: str
+    label: str
+    value: str = ""
+    group: str = ""  # e.g. "Party 1"; "" for an ungrouped, top-level field
 
 
 class ChatTurnResult(BaseModel):
     """Structured output the LLM returns for each chat turn."""
 
     reply: str
-    fields: MutualNdaFields
+    document_type: str = ""  # a catalog.json template name, or "" if not yet decided
+    fields: list[DocumentField] = Field(default_factory=list)
+    is_complete: bool = False
 
 
 class ChatMessageRequest(BaseModel):
@@ -49,11 +45,14 @@ class ChatMessageRequest(BaseModel):
 
     message: str
     history: list[ChatMessage] = Field(default_factory=list)
-    fields: MutualNdaFields = Field(default_factory=MutualNdaFields)
+    document_type: str = ""
+    fields: list[DocumentField] = Field(default_factory=list)
 
 
 class GreetingResponse(BaseModel):
     """Response body for GET /api/chat/greeting."""
 
     reply: str
-    fields: MutualNdaFields
+    document_type: str = ""
+    fields: list[DocumentField] = Field(default_factory=list)
+    is_complete: bool = False
