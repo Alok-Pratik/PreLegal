@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-SCRUM-5 established a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. SCRUM-6 added AI chat for drafting a Mutual NDA; SCRUM-7 expanded it to all 11 document types in catalog.json. Real user authentication and document persistence are not built yet and are expected in a later ticket.
+SCRUM-5 established a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. SCRUM-6 added AI chat for drafting a Mutual NDA; SCRUM-7 expanded it to all 11 document types in catalog.json. SCRUM-8 replaced the fake login with real email/password authentication and added backend persistence for drafted documents.
 
 ## Development process
 
@@ -31,7 +31,7 @@ There is an OPENROUTER_API_KEY in the .env file in the project root.
 The entire project should be packaged into a Docker container.  
 The backend should be in backend/ and be a uv project, using FastAPI.  
 The frontend should be in frontend/  
-The database should use SQLLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in.  
+The database should use SQLLite and be created from scratch each time the Docker container is brought up, allowing for a users table with sign up and sign in. Session signing keys are also generated fresh at process start rather than persisted, matching the database's own fresh-per-container-start lifecycle (see SCRUM-8 below).  
 Consider statically building the frontend and serving it via FastAPI, if that will work.  
 There should be scripts in scripts/ for:  
 ```bash
@@ -60,8 +60,7 @@ Backend available at http://localhost:8000
 
 ### Completed (SCRUM-5)
 - V1 foundation: Docker multi-stage build, FastAPI + SQLite backend (fresh DB each container start), Next.js static export served by FastAPI at localhost:8000, start/stop scripts for Mac/Linux/Windows
-- Fake login screen: enter an email, no password, to enter the platform
-- `users` table tracks only email identity for the fake session (no password field)
+- Fake login screen: enter an email, no password, to enter the platform (replaced by real signup/signin in SCRUM-8)
 - Placeholder home page after login with a user menu (email + sign out)
 - Backend pytest coverage and frontend jest coverage for the login/logout flow
 - Merged via [PR #4](https://github.com/Alok-Pratik/PreLegal/pull/4)
@@ -71,7 +70,7 @@ Backend available at http://localhost:8000
 - One structured-output call per turn returns both a conversational reply and the merged NDA fields, per the AI design guidance above (see that section for current model choice)
 - Backend defensively re-merges fields so a blank value from the LLM never erases a previously known one
 - Live document preview updates as fields are extracted; PDF download (`@react-pdf/renderer`) once all required fields are present
-- No persistence: chat/fields live only in React state, reset on refresh (no backend endpoint stores conversations)
+- No persistence at the time: chat/fields lived only in React state, reset on refresh (backend persistence added in SCRUM-8)
 - Chat endpoints require the fake login session; a failed LLM call returns a clean `503` instead of a raw error
 - Merged via [PR #5](https://github.com/Alok-Pratik/PreLegal/pull/5)
 
@@ -87,13 +86,27 @@ Backend available at http://localhost:8000
 - The model sometimes emits literal HTML `<br>` tags for line breaks; since the chat UI renders messages as plain text, `_clean_reply` strips them defensively
 - Merged via [PR #6](https://github.com/Alok-Pratik/PreLegal/pull/6)
 
+### Completed (SCRUM-8)
+- Replaced the fake email-only login with real accounts: `users.hashed_password` (bcrypt, via the `bcrypt` package directly) plus `SignupRequest`/`SigninRequest` in `backend/models/auth.py`; the old passwordless `/api/auth/login` endpoint is gone
+- Session cookie now holds a signed, expiring token (`backend/core/security.py`, `itsdangerous`) instead of a raw user id, so it can't be forged or tampered with client-side; signing key is generated fresh at process start, matching the database's fresh-per-container-start lifecycle (no secret to configure, but sessions don't survive a restart either — acceptable since neither does the DB)
+- New `documents` table persists each drafted document (`document_type`, fields, chat history as JSON, `is_complete`) per user, in `backend/database.py`; `backend/services/document_service.py` saves a row on every chat turn once the AI has picked a `document_type`, keyed by `document_id`
+- `POST /api/chat/message` now accepts/returns a `document_id` so a conversation already in progress keeps updating the same row instead of creating a new one each turn
+- New `GET /api/documents` and `GET /api/documents/{id}` list a user's own documents and fetch one with its full chat history so a draft can be resumed; ownership is checked (404, not 403, if another user's id is requested) in `DocumentService._get_owned`
+- Frontend: `LoginScreen` now has separate sign-up/sign-in forms; a `DocumentsList` "My Documents" view (with `AppHeader` tab navigation) lets a user browse past documents and reopen one into `ChatInterface`, which resumes from the saved history instead of always starting fresh
+- Added a shared `apiClient.ts` (`getJson`/`postJson` with credentialed fetch and consistent error extraction from FastAPI's error shapes) that `chatApi.ts` and the new `documentsApi.ts` both build on
+- Merged via [PR #7](https://github.com/Alok-Pratik/PreLegal/pull/7)
+
 ### Current API Endpoints
-- `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie
+- `POST /api/auth/signup` - Create an account (email + password), sets session cookie
+- `POST /api/auth/signin` - Sign in to an existing account, sets session cookie
 - `POST /api/auth/logout` - Clear session cookie
 - `GET /api/auth/me` - Get current user info
 - `GET /api/chat/greeting` - Opening AI message (auth required)
-- `POST /api/chat/message` - Send a chat message, get back the AI's reply and updated document type/fields/completion state (auth required)
+- `POST /api/chat/message` - Send a chat message, get back the AI's reply and updated document type/fields/completion state; persists the turn to the `documents` table (auth required)
+- `GET /api/documents` - List the current user's documents, most recently updated first (auth required)
+- `GET /api/documents/{document_id}` - Get one of the current user's documents, including chat history (auth required)
 - `GET /api/health` - Health check
 
 ### Not yet built
-- Real authentication (passwords, JWT) and document persistence
+- Password reset / email verification
+- Editing or deleting a persisted document (currently create/append and read-only list/view)
