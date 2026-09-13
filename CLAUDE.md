@@ -71,6 +71,8 @@ Backend available at http://localhost:8000
 - Live document preview updates as fields are extracted; PDF download (`@react-pdf/renderer`) once all required fields are present
 - No persistence: chat/fields live only in React state, reset on refresh (no backend endpoint stores conversations)
 - Chat endpoints require the fake login session; a failed LLM call returns a clean `503` instead of a raw error
+- Requires the configured OpenRouter account to have credits (a `402 Insufficient credits` response from OpenRouter surfaces to the user as the same clean `503`, so an out-of-credits key isn't visually distinguishable from a real outage)
+- Merged via [PR #5](https://github.com/Alok-Pratik/PreLegal/pull/5)
 
 ### Current API Endpoints
 - `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie
