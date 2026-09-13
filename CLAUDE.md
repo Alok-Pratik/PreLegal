@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-SCRUM-5 reset the app to a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. The AI chat, document types, and real user authentication built in PL-5 through PL-7 (described below for history) were removed from this foundation and will be rebuilt on top of it in later tickets.
+SCRUM-5 established a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. AI chat, the document catalog, and real user authentication are not built yet and are expected in later tickets.
 
 ## Development process
 
@@ -56,48 +56,13 @@ Backend available at http://localhost:8000
 
 ## Implementation Status
 
-### Completed (SCRUM-5) — current state
-- Rebuilt the V1 foundation: Docker multi-stage build, FastAPI + SQLite backend (fresh DB each container start), Next.js static export served by FastAPI at localhost:8000, start/stop scripts for Mac/Linux/Windows
-- Fake login screen: enter an email, no password, to enter the platform (no real authentication yet)
-- `users` table tracks only email identity for the fake session
-- Placeholder home page after login; no document types, AI chat, or document persistence yet
-- The AI chat, document catalog, and real JWT/bcrypt authentication from PL-5–PL-7 below were removed from the codebase for this reset and are expected back in future tickets
-
-### History (superseded by SCRUM-5, kept for reference)
-
-### Completed (PL-4)
-- Docker multi-stage build (Node frontend + Python backend)
-- FastAPI backend with SQLite (fresh DB each container start)
-- Next.js static export served by FastAPI at localhost:8000
-- Auth routes: POST /api/auth/signup, POST /api/auth/signin, POST /api/auth/signout, GET /api/auth/me
-- Start/stop scripts for Mac, Linux, Windows
-- Mutual NDA form with live preview and PDF download
-
-### Completed (PL-5)
-- AI chat interface replaces manual form for NDA creation
-- Uses LiteLLM via OpenRouter with Cerebras inference (gpt-oss-120b model)
-- Structured outputs for reliable field extraction from conversation
-- Live preview updates as AI extracts fields from chat
-- AI greets user, asks questions conversationally, and confirms when complete
-- Download button appears when all required fields are gathered
-
-### Completed (PL-6)
-- Support for all 11 document types from catalog.json
-- AI detects document type from user requests and routes accordingly
-- Dedicated preview/PDF components for Mutual NDA, Cloud Service Agreement, Pilot Agreement
-- Generic preview/PDF components for remaining document types (Design Partner, SLA, Professional Services, Partnership, Software License, DPA, BAA, AI Addendum)
-- Auto-focus chat input after sending messages
-- AI always asks follow-on questions when more information is needed
-
-### Completed (PL-7)
-- Functional user authentication with JWT tokens in HttpOnly cookies
-- User signup and signin with email/password (bcrypt password hashing)
-- Document persistence - users can save documents to their account
-- My Documents modal to view, load, and delete saved documents
-- User menu with sign out functionality
-- New Document button to start fresh
-- Auth context for managing user state across the app
-- Protected document save/load endpoints
+### Completed (SCRUM-5)
+- V1 foundation: Docker multi-stage build, FastAPI + SQLite backend (fresh DB each container start), Next.js static export served by FastAPI at localhost:8000, start/stop scripts for Mac/Linux/Windows
+- Fake login screen: enter an email, no password, to enter the platform
+- `users` table tracks only email identity for the fake session (no password field)
+- Placeholder home page after login with a user menu (email + sign out)
+- Backend pytest coverage and frontend jest coverage for the login/logout flow
+- Merged via [PR #4](https://github.com/Alok-Pratik/PreLegal/pull/4)
 
 ### Current API Endpoints
 - `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie
@@ -105,4 +70,7 @@ Backend available at http://localhost:8000
 - `GET /api/auth/me` - Get current user info
 - `GET /api/health` - Health check
 
-The chat and document endpoints listed below (from PL-5–PL-7) no longer exist on this branch; they'll return once those features are rebuilt on the new foundation.
+### Not yet built
+- AI chat for document creation
+- The 11 document types from catalog.json (preview, PDF generation)
+- Real authentication (passwords, JWT) and document persistence
