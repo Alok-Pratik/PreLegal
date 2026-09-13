@@ -1,16 +1,23 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { postJson } from '@/services/apiClient';
 
 export interface User {
   id: number;
   email: string;
 }
 
+interface AuthResponse {
+  user: User;
+  message: string;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<void>;
+  signin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
@@ -41,23 +48,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser();
   }, [refreshUser]);
 
-  // Fake login: no password is required yet (see SCRUM-5). Entering an
-  // email is enough to enter the platform. Replace with real
-  // authentication in a later ticket.
-  const login = async (email: string) => {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email }),
-    });
+  const signup = async (email: string, password: string) => {
+    const data = await postJson<AuthResponse>('/api/auth/signup', { email, password }, 'Sign up failed');
+    setUser(data.user);
+  };
 
-    if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.detail || 'Sign in failed');
-    }
-
-    const data = await res.json();
+  const signin = async (email: string, password: string) => {
+    const data = await postJson<AuthResponse>('/api/auth/signin', { email, password }, 'Sign in failed');
     setUser(data.user);
   };
 
@@ -70,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, signup, signin, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

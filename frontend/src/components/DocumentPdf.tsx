@@ -2,6 +2,9 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { DocumentField } from '@/types/chat';
 import { groupFields } from '@/utils/documentFields';
 
+const DISCLAIMER =
+  'This document is a draft generated with AI assistance. It is not legal advice and should be reviewed by a qualified attorney before use.';
+
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 11, fontFamily: 'Helvetica' },
   title: { fontSize: 18, fontWeight: 700, marginBottom: 16, color: '#032147' },
@@ -9,6 +12,13 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: 6 },
   label: { width: 180, fontWeight: 700 },
   value: { flex: 1 },
+  disclaimer: {
+    marginTop: 24,
+    paddingTop: 12,
+    borderTop: '1px solid #cbd5e1',
+    fontSize: 9,
+    color: '#888888',
+  },
 });
 
 function FieldRow({ field }: { field: DocumentField }) {
@@ -41,6 +51,8 @@ export function DocumentPdf({ documentType, fields }: DocumentPdfProps) {
             ))}
           </View>
         ))}
+
+        <Text style={styles.disclaimer}>{DISCLAIMER}</Text>
       </Page>
     </Document>
   );

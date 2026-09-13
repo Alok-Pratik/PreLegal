@@ -2,22 +2,27 @@
 
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { ChatMessage, DocumentField } from '@/types/chat';
+import { DocumentDetail } from '@/types/documents';
 import { fetchGreeting, sendChatMessage } from '@/services/chatApi';
 
 export interface DocumentState {
   documentType: string;
   fields: DocumentField[];
   isComplete: boolean;
+  documentId: number | null;
 }
 
 interface ChatInterfaceProps {
   onDocumentStateUpdated: (state: DocumentState) => void;
+  /** When resuming a previously saved document, its full state (skips the greeting call). */
+  initialDocument?: DocumentDetail;
 }
 
-export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [documentType, setDocumentType] = useState('');
-  const [fields, setFields] = useState<DocumentField[]>([]);
+export function ChatInterface({ onDocumentStateUpdated, initialDocument }: ChatInterfaceProps) {
+  const [messages, setMessages] = useState<ChatMessage[]>(initialDocument?.messages ?? []);
+  const [documentType, setDocumentType] = useState(initialDocument?.document_type ?? '');
+  const [fields, setFields] = useState<DocumentField[]>(initialDocument?.fields ?? []);
+  const [documentId, setDocumentId] = useState<number | null>(initialDocument?.id ?? null);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +30,16 @@ export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (initialDocument) {
+      onDocumentStateUpdated({
+        documentType: initialDocument.document_type,
+        fields: initialDocument.fields,
+        isComplete: initialDocument.is_complete,
+        documentId: initialDocument.id,
+      });
+      return;
+    }
+
     fetchGreeting()
       .then((result) => {
         setMessages([{ role: 'assistant', content: result.reply }]);
@@ -34,6 +49,7 @@ export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
           documentType: result.document_type,
           fields: result.fields,
           isComplete: result.is_complete,
+          documentId: null,
         });
       })
       .catch((err) =>
@@ -68,14 +84,16 @@ export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
     setError(null);
 
     try {
-      const result = await sendChatMessage(trimmed, messages, documentType, fields);
+      const result = await sendChatMessage(trimmed, messages, documentType, fields, documentId);
       setMessages([...nextHistory, { role: 'assistant', content: result.reply }]);
       setDocumentType(result.document_type);
       setFields(result.fields);
+      setDocumentId(result.document_id ?? null);
       onDocumentStateUpdated({
         documentType: result.document_type,
         fields: result.fields,
         isComplete: result.is_complete,
+        documentId: result.document_id ?? null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong sending that message.');
@@ -91,7 +109,7 @@ export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
               className={`max-w-[80%] rounded-lg px-4 py-2 whitespace-pre-wrap ${
-                msg.role === 'user' ? 'bg-[#753991] text-white' : 'bg-slate-100 text-slate-800'
+                msg.role === 'user' ? 'bg-brand-purple text-white' : 'bg-slate-100 text-slate-800'
               }`}
             >
               {msg.content}
@@ -120,12 +138,12 @@ export function ChatInterface({ onDocumentStateUpdated }: ChatInterfaceProps) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
           disabled={isSending}
-          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#209dd7] focus:border-transparent disabled:bg-slate-50"
+          className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent disabled:bg-slate-50"
         />
         <button
           type="submit"
           disabled={isSending || !input.trim()}
-          className="px-4 py-2 bg-[#753991] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-brand-purple text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Send
         </button>

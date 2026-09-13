@@ -52,7 +52,7 @@ export function DownloadButton({ documentType, fields }: DownloadButtonProps) {
         onClick={handleDownload}
         disabled={isGenerating}
         aria-busy={isGenerating}
-        className="px-4 py-2 bg-[#209dd7] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 bg-brand-blue text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isGenerating ? 'Generating PDF...' : 'Download PDF'}
       </button>
