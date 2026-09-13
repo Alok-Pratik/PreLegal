@@ -8,7 +8,7 @@ The available documents are covered in the catalog.json file in the project root
 
 @catalog.json
 
-SCRUM-5 established a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. AI chat, the document catalog, and real user authentication are not built yet and are expected in later tickets.
+SCRUM-5 established a clean V1 foundation: Docker, FastAPI + SQLite backend, statically-built Next.js frontend, start/stop scripts, and a fake login screen with no real authentication. SCRUM-6 added AI chat for drafting one document type (Mutual NDA); the other 10 document types and real user authentication are not built yet and are expected in later tickets.
 
 ## Development process
 
@@ -64,13 +64,22 @@ Backend available at http://localhost:8000
 - Backend pytest coverage and frontend jest coverage for the login/logout flow
 - Merged via [PR #4](https://github.com/Alok-Pratik/PreLegal/pull/4)
 
+### Completed (SCRUM-6)
+- Freeform AI chat replaces a form for drafting a Mutual NDA (still the only document type)
+- One structured-output call per turn (LiteLLM via OpenRouter, Cerebras provider, `openrouter/openai/gpt-oss-120b`) returns both a conversational reply and the merged NDA fields, per the AI design guidance above
+- Backend defensively re-merges fields so a blank value from the LLM never erases a previously known one
+- Live document preview updates as fields are extracted; PDF download (`@react-pdf/renderer`) once all required fields are present
+- No persistence: chat/fields live only in React state, reset on refresh (no backend endpoint stores conversations)
+- Chat endpoints require the fake login session; a failed LLM call returns a clean `503` instead of a raw error
+
 ### Current API Endpoints
 - `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie
 - `POST /api/auth/logout` - Clear session cookie
 - `GET /api/auth/me` - Get current user info
+- `GET /api/chat/greeting` - Opening AI message and empty NDA fields (auth required)
+- `POST /api/chat/message` - Send a chat message, get back the AI's reply and updated NDA fields (auth required)
 - `GET /api/health` - Health check
 
 ### Not yet built
-- AI chat for document creation
-- The 11 document types from catalog.json (preview, PDF generation)
+- The other 10 document types from catalog.json
 - Real authentication (passwords, JWT) and document persistence
