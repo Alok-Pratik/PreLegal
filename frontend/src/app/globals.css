@@ -5,6 +5,17 @@
   --foreground: #171717;
 }
 
+/* Brand palette (see CLAUDE.md "Color Scheme"), centralized here so the rest
+   of the app uses named utilities (bg-brand-purple, text-brand-navy, ...)
+   instead of scattered arbitrary hex values. */
+@theme {
+  --color-brand-yellow: #ecad0a;
+  --color-brand-blue: #209dd7;
+  --color-brand-purple: #753991;
+  --color-brand-navy: #032147;
+  --color-brand-gray: #888888;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

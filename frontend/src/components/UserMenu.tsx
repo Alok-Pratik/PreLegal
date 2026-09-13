@@ -34,7 +34,7 @@ export function UserMenu({ user }: UserMenuProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
       >
-        <div className="w-8 h-8 bg-[#753991] rounded-full flex items-center justify-center text-white font-medium text-sm">
+        <div className="w-8 h-8 bg-brand-purple rounded-full flex items-center justify-center text-white font-medium text-sm">
           {user.email[0].toUpperCase()}
         </div>
         <span className="text-sm text-slate-700 hidden sm:inline max-w-32 truncate">

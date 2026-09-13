@@ -1,33 +1,34 @@
-"""Fake authentication business logic for the V1 foundation.
-
-There is no password check here by design (see SCRUM-5): entering an
-email is enough to enter the platform. This is a placeholder to be
-replaced by real authentication in a later ticket.
-"""
+"""Authentication business logic: sign up, sign in, and session lookup."""
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from core.security import hash_password, verify_password
 from database import User
 
 
 class AuthService:
-    """Handles the fake authentication business logic."""
+    """Handles authentication business logic."""
 
     def __init__(self, db: Session):
         self.db = db
 
-    def login(self, email: str) -> User:
-        """Get or create a user by email and log them in. No password
-        is checked or stored."""
-        user = self.db.query(User).filter(User.email == email).first()
-        if user:
-            return user
+    def signup(self, email: str, password: str) -> User:
+        """Create a new account. Raises 409 if the email is already taken."""
+        if self.db.query(User).filter(User.email == email).first():
+            raise HTTPException(status_code=409, detail="An account with this email already exists")
 
-        user = User(email=email)
+        user = User(email=email, hashed_password=hash_password(password))
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+        return user
+
+    def signin(self, email: str, password: str) -> User:
+        """Authenticate an existing account. Raises 401 on any mismatch."""
+        user = self.db.query(User).filter(User.email == email).first()
+        if not user or not verify_password(password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
         return user
 
     def get_user_by_id(self, user_id: int) -> User:

@@ -1,37 +1,20 @@
 import { ChatMessage, ChatTurnResult, DocumentField } from '@/types/chat';
-
-async function extractErrorMessage(res: Response, fallback: string): Promise<string> {
-  try {
-    const body = await res.json();
-    return body.detail || fallback;
-  } catch {
-    return fallback;
-  }
-}
+import { getJson, postJson } from './apiClient';
 
 export async function fetchGreeting(): Promise<ChatTurnResult> {
-  const res = await fetch('/api/chat/greeting', { credentials: 'include' });
-  if (!res.ok) {
-    throw new Error(await extractErrorMessage(res, 'Failed to start the conversation'));
-  }
-  return res.json();
+  return getJson('/api/chat/greeting', 'Failed to start the conversation');
 }
 
 export async function sendChatMessage(
   message: string,
   history: ChatMessage[],
   documentType: string,
-  fields: DocumentField[]
+  fields: DocumentField[],
+  documentId: number | null
 ): Promise<ChatTurnResult> {
-  const res = await fetch('/api/chat/message', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ message, history, document_type: documentType, fields }),
-  });
-
-  if (!res.ok) {
-    throw new Error(await extractErrorMessage(res, 'Failed to send message'));
-  }
-  return res.json();
+  return postJson(
+    '/api/chat/message',
+    { message, history, document_type: documentType, fields, document_id: documentId },
+    'Failed to send message'
+  );
 }

@@ -80,9 +80,12 @@ Backend available at http://localhost:8000
 - Fields generalized from a Mutual-NDA-specific schema to one generic `{key, label, value, group}` shape used for every document type; the AI decides which fields a document needs and groups related ones (e.g. "Party 1") for display — see `backend/models/chat.py` and `backend/services/ai_service.py`
 - If the user asks for an unsupported document, the AI explains it can't generate that, suggests the closest catalog match, and waits for the user to agree before gathering fields for it
 - Backend forces `is_complete` to false unless every known field is non-empty (defensive backstop against a premature "ready to download" state)
-- System prompt explicitly requires a follow-up question whenever the document isn't complete
+- The system prompt asks for a follow-up question whenever the document isn't complete, but a free-tier model doesn't reliably comply on its own — `_ensure_follow_up_question` in `ai_service.py` deterministically appends one naming the first empty field whenever the model's reply doesn't already end in a question
 - Fixed a focus bug: the chat input regained focus by calling `.focus()` in the same tick as re-enabling it, before React had re-rendered the DOM — moved to a `useEffect` keyed on the sending state
 - `NDAPreview`/`NDAPdf` renamed to generic `DocumentPreview`/`DocumentPdf`; grouping logic shared via `frontend/src/utils/documentFields.ts`
+- `catalog.json` was never copied into the Docker image, so `ai_service.py` (which reads it at import time) crashed the app on every container startup — the Dockerfile now copies it alongside `backend/`; if any other code starts reading a repo-root file at import time, remember this same gotcha
+- The model sometimes emits literal HTML `<br>` tags for line breaks; since the chat UI renders messages as plain text, `_clean_reply` strips them defensively
+- Merged via [PR #6](https://github.com/Alok-Pratik/PreLegal/pull/6)
 
 ### Current API Endpoints
 - `POST /api/auth/login` - Fake login: get or create a user by email, no password, sets session cookie

@@ -6,10 +6,13 @@ interface DocumentPreviewProps {
   fields: DocumentField[];
 }
 
+const DISCLAIMER =
+  'This document is a draft generated with AI assistance. It is not legal advice and should be reviewed by a qualified attorney before use.';
+
 function Field({ field }: { field: DocumentField }) {
   return (
     <div>
-      <dt className="text-xs font-medium text-[#888888] uppercase tracking-wide">{field.label}</dt>
+      <dt className="text-xs font-medium text-brand-gray uppercase tracking-wide">{field.label}</dt>
       <dd className={`mt-0.5 ${field.value ? 'text-slate-800' : 'text-slate-400 italic'}`}>
         {field.value || 'Not yet provided'}
       </dd>
@@ -30,11 +33,11 @@ export function DocumentPreview({ documentType, fields }: DocumentPreviewProps) 
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-[#032147]">{documentType}</h2>
+      <h2 className="text-xl font-bold text-brand-navy">{documentType}</h2>
 
       {groups.map(([group, groupFields]) => (
         <div key={group || '__top_level__'}>
-          {group && <h3 className="font-semibold text-[#032147] mb-2">{group}</h3>}
+          {group && <h3 className="font-semibold text-brand-navy mb-2">{group}</h3>}
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {groupFields.map((field) => (
               <Field key={field.key} field={field} />
@@ -42,6 +45,8 @@ export function DocumentPreview({ documentType, fields }: DocumentPreviewProps) 
           </dl>
         </div>
       ))}
+
+      <p className="pt-4 border-t border-slate-200 text-xs text-brand-gray">{DISCLAIMER}</p>
     </div>
   );
 }

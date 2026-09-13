@@ -9,6 +9,7 @@ const mockedChatApi = chatApi as jest.Mocked<typeof chatApi>;
 
 describe('ChatInterface', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     mockedChatApi.fetchGreeting.mockResolvedValue({
       reply: 'Hi! What kind of document do you need?',
       document_type: '',
@@ -45,6 +46,36 @@ describe('ChatInterface', () => {
       documentType: 'Mutual Non-Disclosure Agreement',
       fields: [{ key: 'party1_name', label: 'Name', value: 'Alice', group: 'Party 1' }],
       isComplete: false,
+      documentId: null,
+    });
+  });
+
+  it('resumes a saved document without calling the greeting endpoint', async () => {
+    const onDocumentStateUpdated = jest.fn();
+    const initialDocument = {
+      id: 42,
+      document_type: 'Mutual Non-Disclosure Agreement',
+      is_complete: false,
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: '2026-01-01T00:00:00Z',
+      fields: [{ key: 'party1_name', label: 'Name', value: 'Alice', group: 'Party 1' }],
+      messages: [
+        { role: 'user' as const, content: "I'm Alice, I need an NDA" },
+        { role: 'assistant' as const, content: 'Who is the other party?' },
+      ],
+    };
+
+    render(
+      <ChatInterface onDocumentStateUpdated={onDocumentStateUpdated} initialDocument={initialDocument} />
+    );
+
+    expect(screen.getByText('Who is the other party?')).toBeInTheDocument();
+    expect(mockedChatApi.fetchGreeting).not.toHaveBeenCalled();
+    expect(onDocumentStateUpdated).toHaveBeenLastCalledWith({
+      documentType: 'Mutual Non-Disclosure Agreement',
+      fields: initialDocument.fields,
+      isComplete: false,
+      documentId: 42,
     });
   });
 

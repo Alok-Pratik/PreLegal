@@ -1,4 +1,4 @@
-"""Tests for the fake V1 login flow (see SCRUM-5: no real authentication yet)."""
+"""Tests for real authentication: sign up, sign in, sign out (SCRUM-8)."""
 
 
 def test_me_without_session_is_unauthenticated(client):
@@ -6,25 +6,47 @@ def test_me_without_session_is_unauthenticated(client):
     assert res.status_code == 401
 
 
-def test_login_creates_user_and_sets_session_cookie(client):
-    res = client.post("/api/auth/login", json={"email": "alice@example.com"})
+def test_signup_creates_user_and_sets_session_cookie(client):
+    res = client.post("/api/auth/signup", json={"email": "alice@example.com", "password": "correct-horse"})
 
     assert res.status_code == 200
     body = res.json()
     assert body["user"]["email"] == "alice@example.com"
     assert isinstance(body["user"]["id"], int)
-    assert "session_user_id" in res.cookies
+    assert "session_token" in res.cookies
 
 
-def test_login_is_idempotent_for_same_email(client):
-    first = client.post("/api/auth/login", json={"email": "bob@example.com"}).json()
-    second = client.post("/api/auth/login", json={"email": "bob@example.com"}).json()
+def test_signup_rejects_duplicate_email(client):
+    client.post("/api/auth/signup", json={"email": "bob@example.com", "password": "correct-horse"})
+    second = client.post("/api/auth/signup", json={"email": "bob@example.com", "password": "another-password"})
 
-    assert first["user"]["id"] == second["user"]["id"]
+    assert second.status_code == 409
 
 
-def test_me_returns_current_user_after_login(client):
-    client.post("/api/auth/login", json={"email": "carol@example.com"})
+def test_signup_rejects_short_password(client):
+    res = client.post("/api/auth/signup", json={"email": "short@example.com", "password": "short"})
+    assert res.status_code == 422
+
+
+def test_signup_rejects_password_over_bcrypt_limit(client):
+    # bcrypt hard-errors past 72 bytes rather than truncating; this must be a
+    # clean validation error, not an unhandled 500.
+    res = client.post("/api/auth/signup", json={"email": "long@example.com", "password": "a" * 73})
+    assert res.status_code == 422
+
+
+def test_signin_rejects_password_over_bcrypt_limit(client):
+    res = client.post("/api/auth/signin", json={"email": "nobody@example.com", "password": "a" * 73})
+    assert res.status_code == 422
+
+
+def test_signup_rejects_invalid_email(client):
+    res = client.post("/api/auth/signup", json={"email": "not-an-email", "password": "correct-horse"})
+    assert res.status_code == 422
+
+
+def test_me_returns_current_user_after_signup(client):
+    client.post("/api/auth/signup", json={"email": "carol@example.com", "password": "correct-horse"})
 
     res = client.get("/api/auth/me")
 
@@ -32,13 +54,32 @@ def test_me_returns_current_user_after_login(client):
     assert res.json()["email"] == "carol@example.com"
 
 
-def test_login_rejects_invalid_email(client):
-    res = client.post("/api/auth/login", json={"email": "not-an-email"})
-    assert res.status_code == 422
+def test_signin_with_correct_password_succeeds(client):
+    client.post("/api/auth/signup", json={"email": "dave@example.com", "password": "correct-horse"})
+    client.post("/api/auth/logout")
+
+    res = client.post("/api/auth/signin", json={"email": "dave@example.com", "password": "correct-horse"})
+
+    assert res.status_code == 200
+    assert res.json()["user"]["email"] == "dave@example.com"
+    assert "session_token" in res.cookies
+
+
+def test_signin_with_wrong_password_is_rejected(client):
+    client.post("/api/auth/signup", json={"email": "erin@example.com", "password": "correct-horse"})
+
+    res = client.post("/api/auth/signin", json={"email": "erin@example.com", "password": "wrong-password"})
+
+    assert res.status_code == 401
+
+
+def test_signin_with_unknown_email_is_rejected(client):
+    res = client.post("/api/auth/signin", json={"email": "nobody@example.com", "password": "correct-horse"})
+    assert res.status_code == 401
 
 
 def test_logout_clears_session(client):
-    client.post("/api/auth/login", json={"email": "dave@example.com"})
+    client.post("/api/auth/signup", json={"email": "frank@example.com", "password": "correct-horse"})
     assert client.get("/api/auth/me").status_code == 200
 
     logout_res = client.post("/api/auth/logout")

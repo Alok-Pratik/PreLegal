@@ -1,41 +1,48 @@
-"""Authentication routes.
-
-V1 foundation only: login is a placeholder with no password (see
-SCRUM-5). Real authentication is a future ticket.
-"""
+"""Authentication routes: sign up, sign in, sign out (SCRUM-8)."""
 
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
-from database import get_db, User
-from models.auth import LoginRequest, UserResponse, AuthResponse
-from services.auth_service import AuthService
 from core.dependencies import get_current_user, SESSION_COOKIE_NAME
+from core.security import create_session_token, SESSION_MAX_AGE_SECONDS
+from database import get_db, User
+from models.auth import SignupRequest, SigninRequest, UserResponse, AuthResponse
+from services.auth_service import AuthService
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 
-
-@router.post("/login", response_model=AuthResponse)
-async def login(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    """Fake login: get or create a user by email, no password required."""
-    auth_service = AuthService(db)
-    user = auth_service.login(request.email)
-
+def _set_session_cookie(response: Response, user: User) -> None:
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
-        value=str(user.id),
+        value=create_session_token(user.id),
         httponly=True,
         secure=False,  # Set to True in production with HTTPS
         samesite="lax",
-        max_age=COOKIE_MAX_AGE,
+        max_age=SESSION_MAX_AGE_SECONDS,
     )
 
-    return AuthResponse(
-        user=UserResponse.model_validate(user),
-        message="Signed in successfully",
-    )
+
+@router.post("/signup", response_model=AuthResponse)
+async def signup(request: SignupRequest, response: Response, db: Session = Depends(get_db)):
+    """Create a new account and sign the user in."""
+    auth_service = AuthService(db)
+    user = auth_service.signup(request.email, request.password)
+
+    _set_session_cookie(response, user)
+
+    return AuthResponse(user=UserResponse.model_validate(user), message="Account created successfully")
+
+
+@router.post("/signin", response_model=AuthResponse)
+async def signin(request: SigninRequest, response: Response, db: Session = Depends(get_db)):
+    """Sign in to an existing account."""
+    auth_service = AuthService(db)
+    user = auth_service.signin(request.email, request.password)
+
+    _set_session_cookie(response, user)
+
+    return AuthResponse(user=UserResponse.model_validate(user), message="Signed in successfully")
 
 
 @router.post("/logout")

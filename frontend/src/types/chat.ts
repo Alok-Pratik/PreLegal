@@ -17,4 +17,7 @@ export interface ChatTurnResult {
   document_type: string;
   fields: DocumentField[];
   is_complete: boolean;
+  // Set once the turn has been persisted to a document row (see
+  // POST /api/chat/message); absent from the greeting response.
+  document_id?: number | null;
 }
